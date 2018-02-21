@@ -1,0 +1,27 @@
+<input type="file" enctype="multipart/form-data" (change)="fileChange($event)" name="file">
+<br>
+
+<progress id="progressBar" value="0" max="100" style="width:500px;height:30px;"></progress>
+<br>
+<table border="2">
+    <tr>
+        <td>
+            <b>Filename</b>
+        </td>
+        <td>
+            <b>Date</b>
+        </td>
+    </tr>
+    <tr *ngFor="let d of data">
+        <td>
+            {{d.fileName}}
+        </td>
+        <td>
+            {{d.date}}
+        </td>
+        <td>
+                <button (click)="delete(d.date)">Delete</button>
+        </td>
+    </tr>
+</table>
+<!--<button (click)="grafana()">See your time-series data in Grafana</button>-->
