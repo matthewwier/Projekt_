@@ -19,71 +19,50 @@ function wait() {
 // Wykonanie programu java
 app.get('/parser', function (req, res) {
 
+  console.log(req.query.filename + " " + req.query.date);
+  var path = "uploads/" + req.query.filename;
+  var dbname = req.query.filename + "_" + req.query.date;
+  dbname = dbname.replace('-', '').replace('-', '').replace(':', '').replace(':', '').replace('.','');
+  console.log(dbname);
+  const { execSync } = require('child_process');
+  let stdout_2 = execSync('influx -execute \'CREATE DATABASE '+ dbname + '\'');
+  let stdout = execSync('java -jar SarParser-1.1-SNAPSHOT-jar-with-dependencies.jar -dbname='+dbname+' -input=' + path + ' -driver')
+  
   var request = require('request');
-
-// mozna dodac baze z nazwa 
-const options = {  
+  console.log('OK14');
+  // mozna dodac baze z nazwa 
+  const options = {
     url: 'http://localhost:3000/api/datasources/1',
     method: 'PUT',
     headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Accept-Charset': 'utf-8',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Accept-Charset': 'utf-8',
     },
-    json: { "id":1,
-    "orgId":1,
-    "name":"sarek",
-    "type":"influxdb",
-    "access":"proxy",
-    "url":"http://localhost:8086",
-    "password":"admin",
-    "user":"admin",
-    "database":"baza1",
-    "basicAuth":false,
-    "isDefault":true,
-    "jsonData":null }
-};
+    json: {
+      "id": 1,
+      "orgId": 1,
+      "name": "sarek",
+      "type": "influxdb",
+      "access": "proxy",
+      "url": "http://localhost:8086",
+      "password": "admin",
+      "user": "admin",
+      "database": dbname,
+      "basicAuth": false,
+      "isDefault": true,
+      "jsonData": null
+    }
+  };
 
-request(options, function(err, res, body) {  
-    //let json = JSON.parse(body);
+  request(options, function (err, res, body) {
     console.log(body);
-});
-  /*console.log(req.query.filename + " " + req.query.date);
-  var path = "uploads/" + req.query.filename;
-  var dbname = req.query.filename + "_" + req.query.date;
-
-  const { execSync } = require('child_process');
-  let stdout = execSync('java -jar SarParser-1.1-SNAPSHOT.jar ' + "baza1" + ' ' + path);
-  // append \n to file
-  fs.appendFileSync('ResultsInflux', '\r\n');*/
-  /*var exec = require('child_process').exec;
-  var child = exec('java -jar SarParser-1.1-SNAPSHOT.jar ' + dbname + ' ' + path,
-    function (error, stdout, stderr) {
-      console.log('Output -> ' + stdout);
-      if (error !== null) {
-        console.log("Error -> " + error);
-      }
-    }
-
-  );*/
-
-  //let stdout2 = execSync('influx -import -path=ResultsInflux -precision=s');
-  /*var exec_influx = require('child_process').exec;
-  var influx_child = exec_influx('influx -import -path=ResultsInflux -precision=s',
-    function (error, stdout, stderr) {
-      console.log('Output -> ' + stdout);
-      if (error !== null) {
-        console.log("Error -> " + error);
-      }
-    }
-
-  );*/
-  //module.exports = influx_child;
-  //module.exports = child;
+  });
   res.end();
+  require("openurl").open("http://localhost:3000/dashboard/db/cpus?orgId=1");
 });
 
-app.get('/delete', function(req,res){
+app.get('/delete', function (req, res) {
   console.log(req.query.dateToDelete);
   var date = req.query.dateToDelete;
   console.log(date);
@@ -94,16 +73,16 @@ app.get('/delete', function(req,res){
     if (err) {
       console.log(err);
     } else {
-      //USUWANIE Z KATALOGU
+      //Delete from uploads - unlink
       obj = JSON.parse(data);
       objToDelete = obj.filter(file => file.date == date);
       var fileToDelete = objToDelete[0].fileName;
-      var path = '../server/uploads/'+ fileToDelete;
-      fs.unlink(path, function(err){
-        if(err) return console.log(err);
+      var path = '../server/uploads/' + fileToDelete;
+      fs.unlink(path, function (err) {
+        if (err) return console.log(err);
         console.log('file deleted successfully');
-      });  
-      
+      });
+
       objAfterRemove = obj.filter(file => file.date != date);
       console.log(objAfterRemove);
 
@@ -120,9 +99,9 @@ app.get('/delete', function(req,res){
         }
         console.log('succesfully written to sars.json');
       });
-  }
-});
-
+    }
+  });
+  res.end();
 });
 
 
@@ -145,9 +124,9 @@ app.post('/upload', function (req, res) {
     file.path = __dirname + '/uploads/' + file.name;
     console.log(file.size);
     filename = String(file.name);
-    
+
   });
-  // SPRAWDZIC PRZEPISYWANIE PLIKU
+  // check file rewriting
   form.on('end', function () {
     fs.readFile('files.json', 'utf8', function readFileCallback(err, data) {
       if (err) {
